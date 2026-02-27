@@ -4,7 +4,7 @@
  * @param {object} p An object representing a person, implementing a birth Date parameter.
  * @returns {number} The age in years of p.
  */
-export function calculateAge(p){
+export function getAge(p){
     if(!p){
         throw new Error("missing param p")
     }

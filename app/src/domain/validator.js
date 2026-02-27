@@ -1,4 +1,4 @@
-import {calculateAge} from "./module.js";
+import {getAge} from "./module.js";
 
 /**
  * Validates all parameters for a person
@@ -64,7 +64,7 @@ export function validateAge(birthDate) {
     const year = birthDate.getFullYear();
     if (year < 1900) throw new Error("BIRTHDATE_TOO_OLD")
 
-    const age = calculateAge({birth: birthDate});
+    const age = getAge({birth: birthDate});
     if (age < 18) throw new Error("UNDERAGE");
 
     return true;

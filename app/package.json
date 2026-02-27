@@ -1,6 +1,6 @@
 {
   "name": "tp-cicd-sander-personform",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "A React PersonForm component for user registration with validation",
   "main": "dist/index.js",

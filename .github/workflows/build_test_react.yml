@@ -101,12 +101,10 @@ jobs:
             echo "Package not yet published on NPM. Will publish."
             echo "should_publish=true" >> $GITHUB_OUTPUT
           else
-            # Compare versions using node semver logic
+            # Compare versions manually
             IS_GREATER=$(node -e "
-              const semver = require('semver') || null;
               const local = '$LOCAL_VERSION';
               const published = '$PUBLISHED_VERSION';
-              // Manual comparison if semver not available
               const [lMajor, lMinor, lPatch] = local.split('.').map(Number);
               const [pMajor, pMinor, pPatch] = published.split('.').map(Number);
               const isGreater = lMajor > pMajor ||

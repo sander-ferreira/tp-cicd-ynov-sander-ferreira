@@ -29,3 +29,17 @@ export function calculateAge(p){
     let age = Math.abs(dateDiff.getUTCFullYear() - 1970);
     return age;
 }
+
+/**
+ * Format a person's full name (firstName + lastName)
+ *
+ * @param {string} firstName The person's first name
+ * @param {string} lastName The person's last name
+ * @returns {string} The formatted full name
+ */
+export function formatPersonName(firstName, lastName) {
+    if (!firstName || !lastName) {
+        throw new Error("firstName and lastName are required");
+    }
+    return `${firstName.trim()} ${lastName.trim()}`;
+}

@@ -205,7 +205,7 @@ export default function PersonForm({addPerson}) {
                         data-cy="email"
                         name="email"
                         aria-label="email"
-                        placeholder="Email"
+                        placeholder="Adresse email"
                         value={form.email}
                         onChange={handleChange}
                         onBlur={(e) => validateField('email', e.target.value)}

@@ -1,0 +1,27 @@
+# Source code
+src/
+public/
+
+# Tests
+test/
+cypress/
+cypress.config.js
+jest.config.cjs
+coverage/
+
+# Config files
+vite.config.js
+eslint.config.js
+babel.config.cjs
+jsdoc.json
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# Dev files
+node_modules/
+pnpm-lock.yaml
+index.html
+*.iml

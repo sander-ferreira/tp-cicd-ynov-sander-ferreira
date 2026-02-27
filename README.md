@@ -1,6 +1,6 @@
-# Test Cycle TDD – React + Vite
+# TP CI/CD – React + Vite
 
-Ce projet est un exemple d’application React configurée avec Vite, intégrant :
+Ce projet est une application React configurée avec Vite, publiée en tant que package NPM, intégrant :
 
 - Tests unitaires et d’intégration avec Jest et React Testing Library
 - Tests end-to-end (E2E) avec Cypress

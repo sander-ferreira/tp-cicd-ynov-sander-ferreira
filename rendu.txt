@@ -1,0 +1,2 @@
+1. Repository GitHub : https://github.com/sander-ferreira/tp-cicd-ynov-sander-ferreira
+2. Image Docker Hub : https://hub.docker.com/r/sanderf/tp-cicd-api

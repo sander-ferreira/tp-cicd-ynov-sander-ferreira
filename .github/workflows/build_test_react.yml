@@ -137,57 +137,52 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build MySQL image
-        run: docker build -t mysql-test ./mysql
-
-      - name: Build API image
-        run: docker build -t api-test ./api
-
-      - name: Create Docker network
-        run: docker network create test-network
-
-      - name: Start MySQL container
+      - name: Create .env file
         run: |
-          docker run -d \
-            --name mysql-container \
-            --network test-network \
-            -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
-            -e MYSQL_DATABASE=testdb \
-            mysql-test
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+          echo "MYSQL_DATABASE=testdb" >> .env
+          echo "MYSQL_USER=root" >> .env
 
-      - name: Wait for MySQL to be ready
+      - name: Build and start containers
+        run: docker compose -f docker-compose.yml up --build -d
+
+      - name: Wait for containers to be healthy
         run: |
-          for i in $(seq 1 30); do
-            if docker exec mysql-container mysqladmin ping -h 127.0.0.1 --silent 2>/dev/null; then
-              echo "MySQL is ready!"
+          echo "Waiting for all services to be healthy..."
+          for i in $(seq 1 60); do
+            DB_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' tp-cicd-sander-db-1 2>/dev/null || echo "not found")
+            echo "Attempt $i/60 - db: $DB_HEALTH"
+            if [ "$DB_HEALTH" = "healthy" ]; then
+              echo "All services are healthy!"
               break
             fi
-            echo "Waiting for MySQL... ($i/30)"
-            sleep 2
+            if [ "$i" = "60" ]; then
+              echo "Timeout waiting for services"
+              docker compose logs
+              exit 1
+            fi
+            sleep 5
           done
 
-      - name: Start API container
+      - name: Verify all containers are running
         run: |
-          docker run -d \
-            --name api-container \
-            --network test-network \
-            -p 8000:8000 \
-            -e MYSQL_HOST=mysql-container \
-            -e MYSQL_USER=root \
-            -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
-            -e MYSQL_DATABASE=testdb \
-            api-test
-
-      - name: Wait for API to be ready
-        run: sleep 5
+          docker compose ps
+          RUNNING=$(docker compose ps --status running -q | wc -l)
+          echo "Running containers: $RUNNING"
+          if [ "$RUNNING" -lt 3 ]; then
+            echo "Not all containers are running!"
+            docker compose logs
+            exit 1
+          fi
 
       - name: Test API endpoint /users
         run: |
+          sleep 5
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/users)
           echo "HTTP status code: $RESPONSE"
           if [ "$RESPONSE" != "200" ]; then
             echo "API returned non-200 status code"
-            docker logs api-container
+            docker compose logs api
             exit 1
           fi
 
@@ -208,15 +203,13 @@ jobs:
 
       - name: Tag and push API image to Docker Hub
         run: |
-          docker tag api-test ${{ secrets.DOCKERHUB_USERNAME }}/tp-cicd-api:latest
+          API_IMAGE=$(docker compose images api --format json | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['Repository'])")
+          docker tag "$API_IMAGE" ${{ secrets.DOCKERHUB_USERNAME }}/tp-cicd-api:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/tp-cicd-api:latest
 
-      - name: Cleanup containers
+      - name: Cleanup
         if: always()
-        run: |
-          docker stop api-container mysql-container 2>/dev/null || true
-          docker rm api-container mysql-container 2>/dev/null || true
-          docker network rm test-network 2>/dev/null || true
+        run: docker compose down -v
 
   deploy:
     needs: integration-test

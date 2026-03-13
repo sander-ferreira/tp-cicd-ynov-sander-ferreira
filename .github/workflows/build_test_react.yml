@@ -148,12 +148,14 @@ jobs:
 
       - name: Wait for containers to be healthy
         run: |
-          echo "Waiting for all services to be healthy..."
+          echo "Waiting for db to be healthy..."
+          DB_CONTAINER=$(docker compose ps -q db)
+          echo "DB container ID: $DB_CONTAINER"
           for i in $(seq 1 60); do
-            DB_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' tp-cicd-sander-db-1 2>/dev/null || echo "not found")
+            DB_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "$DB_CONTAINER" 2>/dev/null || echo "not found")
             echo "Attempt $i/60 - db: $DB_HEALTH"
             if [ "$DB_HEALTH" = "healthy" ]; then
-              echo "All services are healthy!"
+              echo "DB is healthy!"
               break
             fi
             if [ "$i" = "60" ]; then

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS utilisateur (
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    date_naissance VARCHAR(20),
+    date_naissance VARCHAR(50),
     code_postal VARCHAR(5),
     ville VARCHAR(100)
 );

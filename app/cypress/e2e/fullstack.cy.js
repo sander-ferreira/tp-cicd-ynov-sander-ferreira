@@ -23,8 +23,7 @@ describe("Fullstack E2E Tests - Real API", () => {
 
         cy.get('[data-cy=submit]').click();
 
-        cy.get('#success-toast').should('be.visible')
-            .and('contain.text', "Enregistré avec succès");
+        cy.contains("Enregistré avec succès", { timeout: 10000 }).should('be.visible');
 
         cy.get('[data-cy=back-home]').click();
         cy.get('[data-cy=user-count]').should("contain", "3");

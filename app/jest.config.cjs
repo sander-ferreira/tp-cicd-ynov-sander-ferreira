@@ -8,5 +8,6 @@ module.exports = {
     },
     globals: {
         __VITE_API_URL__: '',
+        __VITE_BASE_PATH__: '/Test_cycle_TDD/',
     },
 };

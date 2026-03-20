@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: process.env.VITE_BASE_PATH || '/Test_cycle_TDD/',
   define: {
-    __VITE_API_URL__: JSON.stringify(process.env.VITE_API_URL || '')
+    __VITE_API_URL__: JSON.stringify(process.env.VITE_API_URL || ''),
+    __VITE_BASE_PATH__: JSON.stringify(process.env.VITE_BASE_PATH || '/Test_cycle_TDD/')
   }
 })

@@ -6,4 +6,7 @@ module.exports = {
     moduleNameMapper: {
         '\\.(css|scss|svg|png|jpg|jpeg|gif)$': '<rootDir>/test/__mocks__/fileMock.js',
     },
+    globals: {
+        __VITE_API_URL__: '',
+    },
 };

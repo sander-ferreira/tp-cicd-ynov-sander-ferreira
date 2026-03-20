@@ -1,10 +1,15 @@
 import axios from "axios";
 
 /**
- * Base API URL for JSONPlaceholder.
- * Note: JSONPlaceholder does not persist POST requests.
+ * API base URL.
+ * Uses VITE_API_URL env var when available (Docker/production),
+ * falls back to JSONPlaceholder for development.
  */
-const API_BASE = "https://jsonplaceholder.typicode.com";
+/* global __VITE_API_URL__ */
+const API_BASE =
+    (typeof __VITE_API_URL__ !== "undefined" && __VITE_API_URL__)
+        ? __VITE_API_URL__
+        : "https://jsonplaceholder.typicode.com";
 
 /**
  * Fetch all users from the API.
@@ -17,7 +22,15 @@ const API_BASE = "https://jsonplaceholder.typicode.com";
 export async function fetchUsers() {
     try {
         const response = await axios.get(`${API_BASE}/users`);
-        return response.data.map(u => ({
+        const data = response.data;
+
+        // Handle real API format ({users: [...]})
+        if (data.users) {
+            return data.users;
+        }
+
+        // Handle JSONPlaceholder format
+        return data.map(u => ({
             firstName: u.name.split(' ')[0] || '',
             lastName: u.name.split(' ')[1] || '',
             email: u.email,

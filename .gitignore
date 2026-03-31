@@ -3,3 +3,4 @@ app/node_modules
 app/public/docs
 .env
 app/coverage/
+*.pem

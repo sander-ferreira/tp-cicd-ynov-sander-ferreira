@@ -7,7 +7,7 @@
     public_ip: "{{ ansible_host }}"
 
   tasks:
-    # 1. Installation Docker
+    # 1. Installation Docker + outils
     - name: Installation des paquets
       apt:
         update_cache: yes
@@ -15,6 +15,7 @@
           - docker.io
           - docker-compose-v2
           - apache2-utils
+          - openssl
         state: present
 
     - name: Ajout user au groupe docker
@@ -35,6 +36,8 @@
         - "{{ project_dir }}"
         - "{{ project_dir }}/auth"
         - "{{ project_dir }}/data"
+        - "{{ project_dir }}/nginx"
+        - "{{ project_dir }}/nginx/certs"
 
     # 3. Génération mot de passe htpasswd
     - name: Génération mot de passe (admin/admin123)
@@ -49,7 +52,38 @@
         group: ubuntu
         mode: '0640'
 
-    # 4. Copie du docker-compose.yml
+    # 4. Génération du certificat SSL self-signed
+    - name: Génération du certificat SSL self-signed (avec SAN)
+      command: >
+        openssl req -x509 -nodes -newkey rsa:4096
+        -keyout {{ project_dir }}/nginx/certs/registry.key
+        -out {{ project_dir }}/nginx/certs/registry.crt
+        -days 365
+        -subj "/C=FR/ST=IDF/L=Paris/O=YNOV/CN={{ public_ip }}"
+        -addext "subjectAltName=IP:{{ public_ip }}"
+      args:
+        creates: "{{ project_dir }}/nginx/certs/registry.crt"
+
+    - name: Permissions sur les certificats
+      file:
+        path: "{{ item }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+      loop:
+        - "{{ project_dir }}/nginx/certs/registry.key"
+        - "{{ project_dir }}/nginx/certs/registry.crt"
+
+    # 5. Copie de la config nginx
+    - name: Copie de la config nginx
+      template:
+        src: templates/nginx.conf.j2
+        dest: "{{ project_dir }}/nginx/nginx.conf"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    # 6. Copie du docker-compose.yml
     - name: Copie du docker-compose.yml
       template:
         src: templates/docker-compose.yml
@@ -58,7 +92,7 @@
         group: ubuntu
         mode: '0644'
 
-    # 5. Start
+    # 7. Start
     - name: Démarrage de la stack
       command: docker compose up -d
       args:

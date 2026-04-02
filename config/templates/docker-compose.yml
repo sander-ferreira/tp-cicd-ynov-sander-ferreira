@@ -2,8 +2,9 @@ services:
   registry:
     image: registry:2
     restart: always
-    ports:
-      - "5000:5000"
+    # Port 5000 pas exposé publiquement, nginx proxy en interne
+    expose:
+      - "5000"
     environment:
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
@@ -13,14 +14,27 @@ services:
       - ./data:/var/lib/registry
       - ./auth:/auth:ro
 
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - registry
+      - ui
+
   ui:
     image: joxit/docker-registry-ui:main
     restart: always
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       - REGISTRY_TITLE=Ansible Deployed Registry
-      - REGISTRY_URL=http://{{ public_ip }}:5000
+      - NGINX_PROXY_PASS_URL=http://registry:5000
       - SINGLE_REGISTRY=true
       - DELETE_IMAGES=true
     depends_on:

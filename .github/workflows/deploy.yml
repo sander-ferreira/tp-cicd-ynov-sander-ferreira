@@ -1,4 +1,4 @@
-name: Deploy infrastructure on AWS EC2 instance
+name: Deploy infrastructure on an AWS EC2 instance
 
 on:
   workflow_dispatch:

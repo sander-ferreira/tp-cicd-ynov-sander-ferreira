@@ -42,8 +42,8 @@ resource "local_file" "ssh_key" {
 }
 
 resource "aws_security_group" "registry_sg" {
-    name = "registry-sg-simple"
-    description = "Allow SSH, HTTP (UI), Registry (5000)"
+    name = "registry-sg-simple" 
+    description = "Allow SSH, HTTPS and HTTP"
     ingress {
         description = "SSH"
         from_port = 22
@@ -52,17 +52,18 @@ resource "aws_security_group" "registry_sg" {
         cidr_blocks = ["0.0.0.0/0"]
     }
     ingress {
-        description = "Registry UI"
+        description = "HTTP port for registry"
         from_port = 80
         to_port = 80
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
+
     ingress {
-        description = "Registry Docker API"
-        from_port = 5000
-        to_port = 5000
-        protocol = "tcp"
+        description = "HTTPS port for registry"
+        from_port   = 443
+        to_port     = 443
+        protocol    = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
     egress {
@@ -91,7 +92,12 @@ resource "aws_instance" "registry_server" {
   }
 }
 
-# 5. Output (Pour récupérer l'IP facilement)
+# 5. Outputs pour récupérer l'IP publique et la clé privée
 output "instance_ip" {
   value = aws_instance.registry_server.public_ip
+}
+
+output "private_key_pem" {
+    value     = tls_private_key.pk.private_key_pem
+    sensitive = true
 }

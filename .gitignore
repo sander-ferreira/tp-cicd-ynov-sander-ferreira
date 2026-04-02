@@ -4,3 +4,8 @@ app/public/docs
 .env
 app/coverage/
 *.pem
+*.crt
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl

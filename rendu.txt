@@ -1,2 +1,5 @@
-1. Repository GitHub : https://github.com/sander-ferreira/tp-cicd-ynov-sander-ferreira
-2. Image Docker Hub : https://hub.docker.com/r/sanderf/tp-cicd-api
+Repository GitHub : https://github.com/sander-ferreira/tp-cicd-ynov-sander-ferreira
+
+IP publique - Projet app: (générée dynamiquement à chaque déploiement avec Terraform, c'est visible dans les logs du workflow deploy.yml)
+
+IP publique - Registry Docker privé : 51.44.184.112

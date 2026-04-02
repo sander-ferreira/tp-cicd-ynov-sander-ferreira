@@ -34,7 +34,7 @@ services:
       - "80"
     environment:
       - REGISTRY_TITLE=Ansible Deployed Registry
-      - REGISTRY_URL=https://{{ public_ip }}
+      - NGINX_PROXY_PASS_URL=http://registry:5000
       - SINGLE_REGISTRY=true
       - DELETE_IMAGES=true
     depends_on:

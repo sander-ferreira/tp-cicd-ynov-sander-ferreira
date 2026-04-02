@@ -17,6 +17,11 @@ server {
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
         proxy_read_timeout 900;
+
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'HEAD,GET,OPTIONS,DELETE' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization,Accept,Cache-Control' always;
+        add_header 'Access-Control-Expose-Headers' 'Docker-Content-Digest' always;
     }
 }
 

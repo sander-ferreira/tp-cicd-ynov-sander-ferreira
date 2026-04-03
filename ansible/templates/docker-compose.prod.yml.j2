@@ -1,6 +1,7 @@
 services:
   db:
     image: {{ registry_ip }}/mysql:latest
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -15,6 +16,7 @@ services:
 
   adminer:
     image: adminer:latest
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -22,7 +24,8 @@ services:
       - "8080"
 
   api:
-    image: {{ registry_ip }}/api:latest
+    image: {{ registry_ip }}/api_python:latest
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -41,7 +44,8 @@ services:
       - "8000:8000"
 
   frontend:
-    image: {{ registry_ip }}/frontend:latest
+    image: {{ registry_ip }}/web_react:latest
+    restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy

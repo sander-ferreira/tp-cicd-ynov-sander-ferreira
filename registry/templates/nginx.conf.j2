@@ -1,0 +1,37 @@
+# Reverse proxy HTTPS -> registry
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/registry.crt;
+    ssl_certificate_key /etc/nginx/certs/registry.key;
+
+    # Nécessaire pour les gros layers Docker
+    client_max_body_size 0;
+    chunked_transfer_encoding on;
+
+    location / {
+        proxy_pass http://registry:5000;
+        proxy_set_header Host              $http_host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 900;
+
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'HEAD,GET,OPTIONS,DELETE' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization,Accept,Cache-Control' always;
+        add_header 'Access-Control-Expose-Headers' 'Docker-Content-Digest' always;
+    }
+}
+
+# Interface web
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://ui:80;
+        proxy_set_header Host $http_host;
+    }
+}

@@ -1,0 +1,88 @@
+---
+- name: Deploy fullstack application
+  hosts: web
+  become: true
+  vars:
+    app_dir: /home/ubuntu/app
+
+  tasks:
+    # 1. Runtime
+    - name: Install Docker and dependencies
+      apt:
+        update_cache: yes
+        name:
+          - docker.io
+          - docker-compose-v2
+        state: present
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    # 2. Trust du certificat self-signed du registry
+    - name: Create Docker certs directory for registry
+      file:
+        path: /etc/docker/certs.d/{{ registry_ip }}
+        state: directory
+        mode: "0755"
+
+    - name: Install registry CA certificate
+      copy:
+        content: "{{ registry_cert }}"
+        dest: /etc/docker/certs.d/{{ registry_ip }}/ca.crt
+        mode: "0644"
+
+    - name: Restart Docker to apply cert
+      service:
+        name: docker
+        state: restarted
+
+    # 3. Auth registry privé AWS
+    - name: Login to private Docker registry
+      command: docker login {{ registry_ip }} -u {{ registry_user }} -p {{ registry_password }}
+      no_log: true
+
+    # 4. Dossier app
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    # 5. Docker compose de prod
+    - name: Copy production docker-compose
+      template:
+        src: templates/docker-compose.prod.yml.j2
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    # 6. Fichier .env
+    - name: Create .env file
+      copy:
+        content: |
+          MYSQL_ROOT_PASSWORD={{ mysql_root_password }}
+          MYSQL_DATABASE={{ mysql_database }}
+          MYSQL_USER={{ mysql_user }}
+        dest: "{{ app_dir }}/.env"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+      no_log: true
+
+    # 7. Pull des images
+    - name: Pull images from registry
+      command: docker compose pull
+      args:
+        chdir: "{{ app_dir }}"
+
+    # 8. Démarrage
+    - name: Start application stack
+      command: docker compose up -d
+      args:
+        chdir: "{{ app_dir }}"

@@ -69,6 +69,7 @@
           MYSQL_ROOT_PASSWORD={{ mysql_root_password }}
           MYSQL_DATABASE={{ mysql_database }}
           MYSQL_USER={{ mysql_user }}
+          MYSQL_PASSWORD={{ mysql_root_password }}
         dest: "{{ app_dir }}/.env"
         owner: ubuntu
         group: ubuntu

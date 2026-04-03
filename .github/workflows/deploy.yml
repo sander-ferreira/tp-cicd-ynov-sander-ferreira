@@ -37,13 +37,6 @@ jobs:
           push: true
           tags: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/api_python:latest
 
-      - name: Build & push Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./app
-          push: true
-          tags: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/web_react:latest
-
       - name: Build & push MySQL
         uses: docker/build-push-action@v5
         with:
@@ -175,6 +168,29 @@ jobs:
 
       - name: Fix key permissions
         run: chmod 600 key.pem
+
+      # Build frontend ici car VITE_API_URL nécessite l'IP connue après Terraform
+      - name: Configure Docker to trust private registry
+        run: |
+          sudo mkdir -p /etc/docker/certs.d/${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}
+          echo "${{ secrets.REGISTRY_CERT }}" | sudo tee /etc/docker/certs.d/${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/ca.crt
+          sudo systemctl restart docker
+
+      - name: Login to private registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}
+          username: ${{ secrets.PRIVATE_REGISTRY_USERNAME }}
+          password: ${{ secrets.PRIVATE_REGISTRY_PASSWORD }}
+
+      - name: Build & push Frontend with correct API URL
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/web_react:latest
+          build-args: |
+            VITE_API_URL=http://${{ needs.terraform.outputs.instance_ip }}:8000
 
       - name: Install Ansible
         run: pip install ansible

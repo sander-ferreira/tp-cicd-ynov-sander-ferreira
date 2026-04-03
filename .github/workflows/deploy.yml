@@ -38,9 +38,6 @@ jobs:
     name: 🚀 Deploy infrastructure with Terraform
     runs-on: ubuntu-latest
     needs: docker-build-and-deploy
-    outputs:
-      instance_ip: ${{ steps.tf_outputs.outputs.instance_ip }}
-      private_key_pem: ${{ steps.tf_outputs.outputs.private_key_pem }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -114,8 +111,12 @@ jobs:
       - name: Terraform Apply
         id: apply
         run: terraform -chdir=infra apply -auto-approve
-      - name: Capture Terraform outputs
-        id: tf_outputs
+      - name: Create temporary SSH private key file
         run: |
-          echo "instance_ip=$(terraform -chdir=infra output -raw instance_ip)" >> "$GITHUB_OUTPUT"
-          echo "private_key_pem=$(terraform -chdir=infra output -raw private_key_pem)" >> "$GITHUB_OUTPUT"
+          KEY_FILE="$RUNNER_TEMP/key.pem"
+          terraform -chdir=infra output -raw private_key_pem > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          echo "ANSIBLE_KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
+      - name: Capture Terraform instance IP for next steps
+        run: |
+          echo "INSTANCE_IP=$(terraform -chdir=infra output -raw instance_ip)" >> "$GITHUB_ENV"

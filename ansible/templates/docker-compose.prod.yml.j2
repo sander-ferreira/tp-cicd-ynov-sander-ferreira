@@ -9,12 +9,10 @@ services:
       MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    # Healthcheck volontairement simple (ping TCP-ish) : l'EC2 est un t3.micro
-    # (1 GB RAM, CPU burstable). Le check strict "SELECT sur la seed" utilisé
-    # dans le compose de CI est trop coûteux ici et dépasse start_period au
-    # premier boot de mysqld, ce qui bloque docker compose up -d.
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      test:
+        - CMD-SHELL
+        - mysql -uroot -p"$$MYSQL_ROOT_PASSWORD" -D "$$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM utilisateur WHERE email='sander@example.com';" | grep -q '^1$'
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,10 +40,10 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-    # Idem db : exec form plus léger que CMD-SHELL sous pression de ressources t3.micro.
-    # urlopen lève HTTPError sur non-2xx donc le check de status est implicite.
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test:
+        - "CMD-SHELL"
+        - 'python3 -c "import urllib.request; r = urllib.request.urlopen(''http://localhost:8000/health''); exit(0 if r.status == 200 else 1)"'
       interval: 10s
       timeout: 5s
       retries: 5

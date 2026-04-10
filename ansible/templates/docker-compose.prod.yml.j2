@@ -10,7 +10,9 @@ services:
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      test:
+        - CMD-SHELL
+        - mysql -uroot -p"$$MYSQL_ROOT_PASSWORD" -D "$$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM utilisateur WHERE email='sander@example.com';" | grep -q '^1$'
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +41,9 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test:
+        - CMD-SHELL
+        - 'python3 -c "import urllib.request; r = urllib.request.urlopen(''http://localhost:8000/health''); exit(0 if r.status == 200 else 1)"'
       interval: 10s
       timeout: 5s
       retries: 5

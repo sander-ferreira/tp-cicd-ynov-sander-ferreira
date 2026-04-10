@@ -130,11 +130,14 @@ jobs:
 
       # Bridge : Terraform -> Ansible
       # Expose l'IP en output de job et upload la clé SSH + inventory en artifact
+      # Note: on ne masque oas l'IO ici parce que GitHub Actions vide les job outputs
+      # contenant des valeurs masquées (mesure safe). Le masquage se fait
+      # dans le Job 3 où l'IP est utilisée. L'IP ne fuite pas dans les logs de ce
+      # job parce que terraform output est capturé en variable et l'output est sensitive.
       - name: Get outputs and generate artifacts
         id: get-outputs
         run: |
           INSTANCE_IP=$(terraform -chdir=infra output -raw instance_ip)
-          echo "::add-mask::$INSTANCE_IP"
           echo "instance_ip=$INSTANCE_IP" >> "$GITHUB_OUTPUT"
 
           KEY_FILE="key.pem"

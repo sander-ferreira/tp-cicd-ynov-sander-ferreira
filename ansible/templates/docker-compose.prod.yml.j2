@@ -42,10 +42,10 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+    # Idem db : exec form plus léger que CMD-SHELL sous pression de ressources t3.micro.
+    # urlopen lève HTTPError sur non-2xx donc le check de status est implicite.
     healthcheck:
-      test:
-        - CMD-SHELL
-        - 'python3 -c "import urllib.request; r = urllib.request.urlopen(''http://localhost:8000/health''); exit(0 if r.status == 200 else 1)"'
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 5

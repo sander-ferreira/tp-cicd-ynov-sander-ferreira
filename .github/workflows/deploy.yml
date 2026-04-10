@@ -37,20 +37,13 @@ jobs:
           push: true
           tags: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/api_python:latest
 
-      - name: Build & push MySQL
-        uses: docker/build-push-action@v5
-        with:
-          context: ./mysql
-          push: true
-          tags: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/mysql:latest
-
-  # Job 2 : Terraform
-  terraform:
-    name: Deploy infrastructure with Terraform
+  # Job 2 : Terraform + Ansible fusionnés
+  # Un seul job pour éviter les fuites de secrets via artifacts
+  # (key.pem et inventory.ini restent sur le runner et sont détruits à la fin)
+  deploy-infra:
+    name: Provision and configure infrastructure
     runs-on: ubuntu-latest
     needs: docker-build-and-deploy
-    outputs:
-      instance_ip: ${{ steps.get-outputs.outputs.instance_ip }}
 
     steps:
       - name: Checkout repository
@@ -128,55 +121,20 @@ jobs:
       - name: Terraform Apply
         run: terraform -chdir=infra apply -auto-approve
 
-      # Bridge : Terraform -> Ansible
-      # Expose l'IP en output de job et upload la clé SSH + inventory en artifact
-      # Note: on ne masque oas l'IO ici parce que GitHub Actions vide les job outputs
-      # contenant des valeurs masquées (mesure safe). Le masquage se fait
-      # dans le Job 3 où l'IP est utilisée. L'IP ne fuite pas dans les logs de ce
-      # job parce que terraform output est capturé en variable et l'output est sensitive.
-      - name: Get outputs and generate artifacts
-        id: get-outputs
+      # Bridge Terraform -> Ansible sans artifact
+      # L'IP est masquée immédiatement et exposée au reste du job via $GITHUB_ENV
+      # key.pem et inventory.ini restent sur le filesystem du runner (détruits en fin de job)
+      - name: Prepare Ansible inputs
         run: |
           INSTANCE_IP=$(terraform -chdir=infra output -raw instance_ip)
-          echo "instance_ip=$INSTANCE_IP" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$INSTANCE_IP"
+          echo "INSTANCE_IP=$INSTANCE_IP" >> "$GITHUB_ENV"
 
-          KEY_FILE="key.pem"
-          terraform -chdir=infra output -raw private_key_pem > "$KEY_FILE"
-          chmod 600 "$KEY_FILE"
+          terraform -chdir=infra output -raw private_key_pem > key.pem
+          chmod 600 key.pem
 
           echo "[web]" > inventory.ini
           echo "$INSTANCE_IP ansible_user=ubuntu ansible_ssh_private_key_file=key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory.ini
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ansible-artifacts
-          path: |
-            key.pem
-            inventory.ini
-
-  # Job 3 : Ansible + validation
-  ansible:
-    name: Configure and deploy with Ansible
-    runs-on: ubuntu-latest
-    needs: terraform
-    env:
-      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
-
-    steps:
-      - name: Mask instance IP in logs
-        run: echo "::add-mask::$INSTANCE_IP"
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ansible-artifacts
-
-      - name: Fix key permissions
-        run: chmod 600 key.pem
 
       # Build frontend ici car VITE_API_URL nécessite l'IP connue après Terraform
       - name: Configure Docker to trust private registry

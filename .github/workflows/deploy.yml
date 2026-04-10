@@ -134,6 +134,7 @@ jobs:
         id: get-outputs
         run: |
           INSTANCE_IP=$(terraform -chdir=infra output -raw instance_ip)
+          echo "::add-mask::$INSTANCE_IP"
           echo "instance_ip=$INSTANCE_IP" >> "$GITHUB_OUTPUT"
 
           KEY_FILE="key.pem"
@@ -156,8 +157,13 @@ jobs:
     name: Configure and deploy with Ansible
     runs-on: ubuntu-latest
     needs: terraform
+    env:
+      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
 
     steps:
+      - name: Mask instance IP in logs
+        run: echo "::add-mask::$INSTANCE_IP"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -190,7 +196,7 @@ jobs:
           push: true
           tags: ${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }}/web_react:latest
           build-args: |
-            VITE_API_URL=http://${{ needs.terraform.outputs.instance_ip }}:8000
+            VITE_API_URL=http://${{ env.INSTANCE_IP }}:8000
 
       - name: Install Ansible
         run: pip install ansible
@@ -198,7 +204,7 @@ jobs:
       - name: Wait for SSH to be ready
         run: |
           for i in $(seq 1 20); do
-            ssh -i key.pem -o StrictHostKeyChecking=no ubuntu@${{ needs.terraform.outputs.instance_ip }} "echo ready" && break
+            ssh -i key.pem -o StrictHostKeyChecking=no ubuntu@"$INSTANCE_IP" "echo ready" && break
             echo "Waiting for SSH... ($i/20)"
             sleep 10
           done
@@ -220,13 +226,13 @@ jobs:
 
       - name: Validate Frontend
         run: |
-          curl -f http://${{ needs.terraform.outputs.instance_ip }}:3000 \
+          curl -f "http://$INSTANCE_IP:3000" \
             && echo "Frontend OK" || (echo "Frontend KO" && exit 1)
 
       - name: Validate API
         run: |
-          curl -f http://${{ needs.terraform.outputs.instance_ip }}:8000/health \
+          curl -f "http://$INSTANCE_IP:8000/health" \
             && echo "API OK" || (echo "API KO" && exit 1)
 
-      - name: Print application URL
-        run: echo "Application disponible sur http://${{ needs.terraform.outputs.instance_ip }}:3000"
+      - name: Print application deployment status
+        run: echo "Application déployée avec succès (IP masquée dans les logs)"

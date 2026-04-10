@@ -5,6 +5,7 @@
   vars:
     project_dir: "/home/ubuntu/registry"
     public_ip: "{{ ansible_host }}"
+    registry_admin_user: admin
 
   tasks:
     # 1. Installation Docker + outils
@@ -40,9 +41,10 @@
         - "{{ project_dir }}/nginx/certs"
 
     # 3. Génération mot de passe htpasswd
-    - name: Génération mot de passe (admin/admin123)
-      command: htpasswd -Bbn admin admin123
+    - name: Génération mot de passe htpasswd
+      command: htpasswd -Bbn {{ registry_admin_user }} {{ registry_admin_password }}
       register: htpasswd_output
+      no_log: true
 
     - name: Écriture du fichier registry.password
       copy:
@@ -51,6 +53,7 @@
         owner: ubuntu
         group: ubuntu
         mode: '0640'
+      no_log: true
 
     # 4. Génération du certificat SSL self-signed
     - name: Génération du certificat SSL self-signed (avec SAN)

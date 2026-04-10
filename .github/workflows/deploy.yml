@@ -213,6 +213,8 @@ jobs:
           done
 
       - name: Run Ansible playbook
+        env:
+          ANSIBLE_CONFIG: ansible/ansible.cfg
         run: |
           ansible-playbook -i inventory.ini ansible/playbook.yml \
             --extra-vars "registry_ip=${{ secrets.PRIVATE_REGISTRY_PUBLIC_IP }} \

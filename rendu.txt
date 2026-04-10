@@ -1,5 +1,0 @@
-Repository GitHub : https://github.com/sander-ferreira/tp-cicd-ynov-sander-ferreira
-
-IP publique - Projet applicatif : http://15.188.3.80:3000
-
-IP publique - Registry Docker privé : http://13.38.94.10

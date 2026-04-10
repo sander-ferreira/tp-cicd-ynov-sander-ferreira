@@ -94,7 +94,8 @@ resource "aws_instance" "app_server" {
 
 # 5. Outputs pour la CI (IP publique + clé privée pour Ansible)
 output "instance_ip" {
-  value = aws_instance.app_server.public_ip
+  value     = aws_instance.app_server.public_ip
+  sensitive = true
 }
 
 output "private_key_pem" {

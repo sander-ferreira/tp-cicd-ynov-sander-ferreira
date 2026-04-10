@@ -76,14 +76,23 @@
         mode: "0600"
       no_log: true
 
-    # 7. Pull des images
+    # 7. Pull des images (async pour tolérer les coupures SSH sous charge)
     - name: Pull images from registry
       command: docker compose pull
       args:
         chdir: "{{ app_dir }}"
+      async: 600
+      poll: 15
 
-    # 8. Démarrage
+    # Pause pour laisser l'instance respirer après le pull sinon y a un time out (t3.micro = 1 GB RAM)
+    - name: Pause to let instance recover after pull
+      pause:
+        seconds: 10
+
+    # 8. Démarrage (async pour la même raison)
     - name: Start application stack
       command: docker compose up -d
       args:
         chdir: "{{ app_dir }}"
+      async: 600
+      poll: 15

@@ -62,6 +62,15 @@
         group: ubuntu
         mode: "0644"
 
+    # 5bis. Script d'init MySQL (monté en bind sur l'image officielle mysql:8.0)
+    - name: Copy MySQL init script
+      copy:
+        src: ../mysql/init.sql
+        dest: "{{ app_dir }}/init.sql"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
     # 6. Fichier .env
     - name: Create .env file
       copy:

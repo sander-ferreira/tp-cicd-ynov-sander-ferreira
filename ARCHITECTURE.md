@@ -20,15 +20,16 @@
                    │
         ┌──────────┴──────────┐
         ▼                     ▼
-┌───────────────────┐   ┌──────────────────────────┐
-│   EC2 Registry    │   │      EC2 Applicative      │
-│   13.38.94.10     │   │   IP dynamique Terraform  │
-│                   │   │                           │
-│ Nginx :443 (HTTPS)│   │ Frontend  :3000 (public)  │
-│ Registry :5000    │   │ API       :8000 (public)  │
-│ Registry UI :80   │   │ MySQL     :3306 (interne) │
-│ Auth htpasswd     │   │ Adminer   :8080 (interne) │
-└───────────────────┘   └──────────────────────────┘
+┌────────────────────┐   ┌──────────────────────────┐
+│   EC2 Registry     │   │      EC2 Applicative      │
+│   13.38.94.10      │   │   IP dynamique Terraform  │
+│                    │   │                           │
+│ Nginx :443 (HTTPS) │   │ Frontend  :3000 (public)  │
+│  ├─ /v2/* → API    │   │ API       :8000 (public)  │
+│  └─ /*    → UI     │   │ MySQL     :3306 (interne) │
+│ Nginx :80 → 301    │   │ Adminer   :8080 (interne) │
+│ Auth htpasswd      │   │                           │
+└────────────────────┘   └──────────────────────────┘
 ```
 
 ## EC2 Registry
@@ -37,8 +38,8 @@
 - **Provisionnée par** : `infra-registry/` (Terraform) + `registry/` (Ansible)
 - **Services** :
   - `registry:2` — stockage des images Docker (interne, port 5000)
-  - `nginx` — reverse proxy HTTPS sur port 443 avec certificat SSL self-signed
-  - `joxit/docker-registry-ui` — interface web sur port 80
+  - `nginx` — reverse proxy HTTPS sur port 443 (certif SSL self-signed) avec routing par path : `/v2/*` → API Docker, `/*` → UI web. Le port 80 redirige vers 443.
+  - `joxit/docker-registry-ui` — interface web (interne, port 80)
 - **Authentification** : htpasswd (`admin` / secret dans GitHub Secrets)
 - **Infrastructure** : EC2 t3.micro, Ubuntu 24.04, clé SSH générée par Terraform
 
